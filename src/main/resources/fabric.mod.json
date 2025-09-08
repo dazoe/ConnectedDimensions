@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "connecteddimensions",
+  "version": "${version}",
+
+  "name": "ConnectedDimensions",
+  "description": "Fly between dimensions",
+  "authors": [],
+  "contact": {},
+
+  "license": "All-Rights-Reserved",
+  "icon": "assets/connecteddimensions/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dazoe.connecteddimensions.ConnectedDimensions"
+    ]
+  },
+
+  "mixins": [
+    "connecteddimensions.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
