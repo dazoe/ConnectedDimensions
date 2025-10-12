@@ -42,7 +42,7 @@ public record ConnectedDimensionsPortal(boolean goingDown) implements Portal {
 		var scale = DimensionType.getCoordinateScaleFactor(srcWorld.getDimension(), dstWorld.getDimension());
 		var border = dstWorld.getWorldBorder();
 		var dstY = goingDown ? dstWorld.getTopYInclusive() + 1 : dstWorld.getBottomY();
-		var entPos = entity.getPos();
+		var entPos = entity.getEntityPos();
 		var dstVec3d = new Vec3d(entPos.x * scale, dstY, entPos.z * scale);
 
 		TeleportTarget tgt = new TeleportTarget(

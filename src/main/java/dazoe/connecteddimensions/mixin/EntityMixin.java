@@ -25,7 +25,7 @@ abstract class EntityMixin {
 //			ConnectedDimensions.entitySkippedCount++;
 			return;
 		}
-		var world = entity.getWorld();
+		var world = entity.getEntityWorld();
 		var worldKey = world.getRegistryKey();
 		var minY = world.getBottomY()-1;
 		var maxY = world.getBottomY()+world.getHeight()+1;
