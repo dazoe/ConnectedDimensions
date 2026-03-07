@@ -3,6 +3,7 @@ package dazoe.connecteddimensions;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ public class ConnectedDimensions implements ModInitializer {
 				(dispatcher, registryAccess, environment) -> {
 					dispatcher.register(
 							literal("cd")
-									.requires(source -> source.hasPermissionLevel(3))
+									.requires(CommandManager.requirePermissionLevel(ADMINS_CHECK))
 									.executes((ctx) -> {
 										var src = ctx.getSource();
 
