@@ -1,0 +1,19 @@
+
+on: [pull_request, push]
+on: [push]
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Make sure gradlew is executable
+      run: chmod +x ./gradlew
+    - name: Build
+      run: ./gradlew build
+    - name: capture build artifacts
+      uses: forgejo/upload-artifact@v4
+      with:
+        name: Artifacts
+        path: build/libs/
