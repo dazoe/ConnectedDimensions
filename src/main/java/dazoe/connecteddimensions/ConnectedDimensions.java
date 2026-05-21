@@ -2,13 +2,10 @@ package dazoe.connecteddimensions;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.text.Text;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static net.minecraft.server.command.CommandManager.*;
 
 public class ConnectedDimensions implements ModInitializer {
 	public static final String MOD_ID = "connecteddimensions";
@@ -25,15 +22,12 @@ public class ConnectedDimensions implements ModInitializer {
 		CommandRegistrationCallback.EVENT.register(
 				(dispatcher, registryAccess, environment) -> {
 					dispatcher.register(
-							literal("cd")
-									.requires(CommandManager.requirePermissionLevel(ADMINS_CHECK))
+							Commands.literal("cd")
+									.requires(Commands.hasPermission(Commands.LEVEL_ADMINS))
 									.executes((ctx) -> {
 										var src = ctx.getSource();
-
-										src.sendFeedback(() ->
-														Text.literal(String.format("You are %s", src.getEntity().getClass().toString())),
-												false
-										);
+										src.sendSuccess(() -> Component.literal(String.format("You are %s", src.getEntity().getClass().toString())),
+												false);
 										return 1;
 									})
 					);

@@ -1,56 +1,58 @@
 package dazoe.connecteddimensions;
 
-import net.minecraft.block.Portal;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.s2c.play.PositionFlag;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.TeleportTarget;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Portal;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import net.minecraft.world.World;
 
 public record ConnectedDimensionsPortal(boolean goingDown) implements Portal {
 
 	@Override
-	public @Nullable TeleportTarget createTeleportTarget(ServerWorld srcWorld, Entity entity, BlockPos srcPos) {
-		var srcWorldKey = srcWorld.getRegistryKey();
-		RegistryKey<World> dstWorldKey = null;
+	public @Nullable TeleportTransition getPortalDestination(ServerLevel currentLevel, final Entity entity, final BlockPos srcPos) {
+		var currentDimension = currentLevel.dimension();
+		ResourceKey<Level> dstDimension = null;
 		if (goingDown) {
-			if (srcWorldKey == World.OVERWORLD) {
-				dstWorldKey = World.NETHER;
-			} else if (srcWorldKey == World.END) {
-				dstWorldKey = World.OVERWORLD;
+			if (currentDimension == Level.OVERWORLD) {
+				dstDimension = Level.NETHER;
+			} else if (currentDimension == Level.END) {
+				dstDimension = Level.OVERWORLD;
 			}
 		} else {
-			if (srcWorldKey == World.OVERWORLD) {
-				dstWorldKey = World.END;
-			} else if (srcWorldKey == World.NETHER) {
-				dstWorldKey = World.OVERWORLD;
+			if (currentDimension == Level.OVERWORLD) {
+				dstDimension = Level.END;
+			} else if (currentDimension == Level.NETHER) {
+				dstDimension = Level.OVERWORLD;
 			}
 		}
-		if (dstWorldKey == null) {
+		if (dstDimension == null) {
 			ConnectedDimensions.LOGGER.info("Don't this this should have happened.");
 			return null;
 		}
 
-		var dstWorld = srcWorld.getServer().getWorld(dstWorldKey);
-		assert dstWorld != null;
-		var scale = DimensionType.getCoordinateScaleFactor(srcWorld.getDimension(), dstWorld.getDimension());
-		var border = dstWorld.getWorldBorder();
-		var dstY = goingDown ? dstWorld.getTopYInclusive() + 1 : dstWorld.getBottomY();
-		var entPos = entity.getEntityPos();
-		var dstVec3d = new Vec3d(entPos.x * scale, dstY, entPos.z * scale);
+		var dstLevel = currentLevel.getServer().getLevel(dstDimension);
+		assert dstLevel != null;
+		var scale = DimensionType.getTeleportationScale(currentLevel.dimensionType(), dstLevel.dimensionType());
+		var border = dstLevel.getWorldBorder();
+		var dstY = goingDown ? dstLevel.getMaxY() + 1 : dstLevel.getMinY();
+		var entPos = entity.position();
+		var dstVec3d = new Vec3(entPos.x * scale, dstY, entPos.z * scale);
 
-		TeleportTarget tgt = new TeleportTarget(
-				dstWorld, dstVec3d, Vec3d.ZERO, 0.0F, 0.0F,
-				PositionFlag.combine(PositionFlag.DELTA, PositionFlag.ROT), TeleportTarget.ADD_PORTAL_CHUNK_TICKET);
+		TeleportTransition tgt = new TeleportTransition(
+				dstLevel, dstVec3d, Vec3.ZERO, 0.0F, 0.0F,
+				Relative.union(Relative.DELTA, Relative.ROTATION),
+				TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET));
 
 		// Player entities can teleport regardless
-		if (entity instanceof PlayerEntity) {
+		if (entity instanceof Player) {
 			// todo: find a safe place to send players?
 			// idea: make it so they can stand on maxY of srcWorld in dstWorld? ie: so then can build up from
 			// the nether and dig into the overworld, or build up in overworld and throw a portal in the end.
@@ -59,8 +61,7 @@ public record ConnectedDimensionsPortal(boolean goingDown) implements Portal {
 		}
 
 		// non-living entities can only teleport if chunks are loaded.
-		var dstPos = border.clampFloored(dstVec3d.x, dstY, dstVec3d.z);
-		if (dstWorld.isChunkLoaded(dstPos.getX() >> 4, dstPos.getZ() >> 4)) {
+		if (dstLevel.isLoaded(border.clampToBounds(dstVec3d))) {
 			return tgt;
 		}
 
